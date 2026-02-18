@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/nm/study/optimization/lab1",
+    "command": "mpicc -O2 -Wall -I/usr/lib/x86_64-linux-gnu/openmpi/include -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -c benchmark.c -o benchmark.o",
+    "file": "/home/nm/study/optimization/lab1/benchmark.c"
+  }
+]
