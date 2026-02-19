@@ -1,0 +1,43 @@
+#!/bin/sh
+# Lab 1: снять замеры на кластере OAK. Результаты: results/oak_*.csv
+# На OAK: sbatch task_oak.job  (make в job). Затем скопировать results/ и: make plot oak  или  make plot-all
+# Уточни на кафедре: имя партиции (partition) и наличие module load mpi — при необходимости отредактируй #SBATCH и module.
+
+#SBATCH --job-name=lab1-oak
+#SBATCH --partition=2288
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=1
+#SBATCH --time=00:15:00
+#SBATCH --output=slurm-%j.out
+
+cd "${SLURM_SUBMIT_DIR:-.}"
+mkdir -p results
+
+module load mpi 2>/dev/null || module load openmpi 2>/dev/null || true
+make
+
+SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
+N=100
+
+echo "=== test mpiexec -np 2 ./benchmark 4096 2 ==="
+mpiexec -np 2 ./benchmark 4096 2
+echo "=== end test ==="
+
+# network: 2 узла
+echo "level,m_bytes,t_sec" > results/oak_network.csv
+for m in $SIZES; do
+  out=$(mpiexec -np 2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "network,$out" >> results/oak_network.csv
+done
+
+# memory и qpi: 1 узел, 2 процесса
+echo "level,m_bytes,t_sec" > results/oak_memory.csv
+echo "level,m_bytes,t_sec" > results/oak_qpi.csv
+for m in $SIZES; do
+  out=$(mpiexec -np 2 --map-by ppr:2:node ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
+  out=$(mpiexec -np 2 --map-by ppr:2:node ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
+done
+
+echo "Done. Results in results/"

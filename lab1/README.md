@@ -18,7 +18,8 @@
 
 - **benchmark.c** — программа ping-pong: два процесса обмениваются сообщениями заданного размера `m` байт за `n` итераций; каждый процесс вызывает `MPI_Isend` и `MPI_Irecv`, затем `MPI_Waitall`. Вывод (ранг 0): одна строка `m_bytes,t_sec` (среднее время одной передачи).
 - **task_pine.job** — задание SLURM для кластера Pine: снимает все три уровня (memory, qpi, network) и пишет CSV в `results/pine_*.csv`.
-- **plot_results.py** — строит по CSV графики t(m) и пропускная способность (МБ/с) в `plots/`.
+- **task_oak.job** — то же для кластера OAK: результаты в `results/oak_*.csv`.
+- **plot_results.py** — строит по CSV графики t(m) и пропускная способность (МБ/с) в `plots/`. Режим `all` — сравнение Pine и OAK на одних графиках.
 
 ## Зависимости
 
@@ -45,14 +46,16 @@ mpirun -np 2 ./benchmark <размер_байт> [число_итераций]
 
 ## Эксперименты и графики
 
-Замеры выполняются на кластере Pine через SLURM (см. ниже). После получения CSV:
+По заданию нужны замеры на **двух кластерах** (Pine и OAK), затем сравнение «сколько при скольки» — три уровня: память, QPI, сеть. Замеры выполняются через SLURM на каждом кластере (см. ниже). После копирования CSV в `results/`:
 
 ```bash
-make plot
-# или: python3 plot_results.py pine
+make plot        # только Pine
+make plot-oak    # только OAK
+make plot-all    # Pine, OAK и сводные графики сравнения
+# или: python3 plot_results.py pine | oak | all
 ```
 
-Графики: `plots/t_vs_m_pine.pdf`, `plots/bandwidth_vs_m_pine.pdf` (и .png).
+Графики: для каждого кластера — `t_vs_m_<cluster>.pdf`, `bandwidth_vs_m_<cluster>.pdf`; при `plot-all` дополнительно `t_vs_m_pine_vs_oak.pdf`, `bandwidth_vs_m_pine_vs_oak.pdf`.
 
 ## Кластер Pine (pine.cpct.sibsutis.ru)
 
@@ -76,7 +79,21 @@ sbatch task_pine.job
 
 4. Скопировать папку `results/` к себе и построить графики: `make plot` (или выполнить `make plot` на Pine, если установлен matplotlib).
 
-По заданию допускается не учитывать InfiniBand (например, на Oak), если он недоступен.
+### Кластер OAK (oak.cpct.sibsutis.ru)
+
+Вычислительный кластер из четырёх узлов x86-64: 2× Intel Xeon Quad E5620, 24 GB RAM. Коммуникационная сеть: **InfiniBand QDR** (HCA Mellanox MT26428), управляющая сеть: Gigabit Ethernet. ПО: Ubuntu, Open MPI, MPICH, MVAPICH, Open UCX. Подробнее: [Вычислительные ресурсы — кластер Oak](https://wiki.csc.sibsutis.ru/en/home).
+
+Для полного отчёта нужны замеры и на OAK. Запуск: как на Pine, через планировщик кластера (`sbatch` или по инструкции на wiki).
+
+1. Подключение: `ssh username@oak.cpct.sibsutis.ru`. Скопировать проект в рабочий каталог, зайти в `lab1`.
+2. При необходимости отредактировать `task_oak.job`: партиция/очередь на OAK может отличаться от Pine — уточни в wiki или на кафедре.
+3. Запуск:
+```bash
+make
+sbatch task_oak.job
+```
+4. После завершения скопировать из `results/` файлы `oak_memory.csv`, `oak_qpi.csv`, `oak_network.csv` в свою папку `results/` (вместе с `pine_*.csv`).
+5. Локально: `make plot-all` — графики по каждому кластеру и сводные сравнения Pine vs OAK.
 
 ## Структура lab1
 
@@ -84,10 +101,11 @@ sbatch task_pine.job
 lab1/
   benchmark.c       # MPI Isend/Irecv ping-pong, замер времени
   Makefile
-  plot_results.py   # графики по CSV
-  task_pine.job     # задание SLURM для Pine (замеры → results/)
-  results/          # CSV: pine_memory.csv, pine_qpi.csv, pine_network.csv
-  plots/            # графики t(m) и пропускная способность
+  plot_results.py   # графики по CSV (pine | oak | all)
+  task_pine.job     # задание SLURM для Pine (замеры → results/pine_*.csv)
+  task_oak.job      # задание SLURM для OAK (замеры → results/oak_*.csv)
+  results/          # CSV: pine_*.csv, oak_*.csv
+  plots/            # графики t(m), пропускная способность, сравнение Pine vs OAK
   README.md
 ```
 
@@ -95,4 +113,4 @@ lab1/
 
 - **По заданию:** тестовая программа с MPI_Isend/MPI_Irecv; время t — среднее по n выполнений в цикле с ожиданием завершения обменов на каждой итерации (у нас: `MPI_Waitall` после каждой пары Isend/Irecv).
 - **Ping-pong:** два процесса (ранги 0 и 1); каждый отправляет сообщение партнёру и принимает ответ, затем `MPI_Waitall`. На Pine привязка к узлам задаётся в task_pine.job (mpiexec, map-by).
-- **Три уровня:** память (один узел, один сокет), QPI (один узел, два сокета), сеть (два узла, Gigabit Ethernet на Pine). Графики t(m) и пропускная способность строятся по CSV из экспериментов.
+- **Три уровня:** память (один узел, один сокет), QPI (один узел, два сокета), сеть (два узла: на Pine — Gigabit Ethernet, на OAK — InfiniBand QDR). Графики t(m) и пропускная способность строятся по CSV. Для отчёта — замеры на Pine и OAK и сравнение.

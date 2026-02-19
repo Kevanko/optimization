@@ -8,7 +8,7 @@ TARGET  := benchmark
 NP      := 2
 N_ITER  := 50
 
-.PHONY: all clean run run-small run-large plot help compile_commands.json
+.PHONY: all clean run run-small run-large plot help
 
 all: $(TARGET)
 
@@ -31,6 +31,10 @@ run-large: $(TARGET)
 # Графики по результатам из results/ → plots/
 plot:
 	python3 plot_results.py pine
+plot-oak:
+	python3 plot_results.py oak
+plot-all:
+	python3 plot_results.py all
 
 # Список команд
 help:
@@ -39,9 +43,12 @@ help:
 	@echo "  make run        — запуск: 2 процесса, 1 МБ, 50 итераций"
 	@echo "  make run-small  — 4 КБ, 100 итераций"
 	@echo "  make run-large  — 8 МБ, 20 итераций"
-	@echo "  make plot       — графики из results/ → plots/"
+	@echo "  make plot       — графики Pine из results/"
+	@echo "  make plot-oak   — графики OAK"
+	@echo "  make plot-all   — графики Pine, OAK и сравнение Pine vs OAK"
 	@echo "  make clean      — удалить сборку"
-	@echo "  На Pine: make && sbatch task_pine.job → results/, затем make plot"
+	@echo "  Pine: make && sbatch task_pine.job → results/ → make plot"
+	@echo "  OAK:  make && sbatch task_oak.job  → results/ → make plot-all"
 	@echo "Переменные: NP=2 N_ITER=50 MPIRUN=mpirun"
 
 # Build with MPICH (if mpicc is not in PATH, set MPI_CC):
@@ -50,8 +57,3 @@ help:
 
 # Build with MVAPICH2 on cluster (example):
 # module load mvapich2/2.2; make
-
-# Generate compile_commands.json for IDE (fixes "mpi.h not found" in clangd)
-compile_commands.json:
-	@MPI_INC=$$($(MPICC) --showme:compile 2>/dev/null || $(MPICC) -showme:compile 2>/dev/null); \
-	echo '[{"directory":"'$$(pwd)'","command":"$(MPICC) $(CFLAGS) '"$$MPI_INC"' -c benchmark.c -o benchmark.o","file":"benchmark.c"}]' > $@
