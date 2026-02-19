@@ -36,9 +36,9 @@ FIRST_NODE=$(scontrol show hostnames "$SLURM_NODELIST" 2>/dev/null | head -1)
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
 for m in $SIZES; do
-  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" | head -1)
   [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
-  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" | head -1)
   [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
 done
 
