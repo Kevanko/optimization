@@ -8,7 +8,7 @@ TARGET  := benchmark
 NP      := 2
 N_ITER  := 50
 
-.PHONY: all clean run run-small run-large experiments plot help compile_commands.json
+.PHONY: all clean run run-small run-large plot help compile_commands.json
 
 all: $(TARGET)
 
@@ -28,10 +28,6 @@ run-small: $(TARGET)
 run-large: $(TARGET)
 	$(MPIRUN) -np $(NP) ./$(TARGET) 8388608 20
 
-# Серия экспериментов (memory, qpi, network), результаты в results/
-experiments: $(TARGET)
-	./run_experiments.sh pine
-
 # Графики по результатам из results/ → plots/
 plot:
 	python3 plot_results.py pine
@@ -43,10 +39,9 @@ help:
 	@echo "  make run        — запуск: 2 процесса, 1 МБ, 50 итераций"
 	@echo "  make run-small  — 4 КБ, 100 итераций"
 	@echo "  make run-large  — 8 МБ, 20 итераций"
-	@echo "  make experiments — все уровни (memory/qpi/network) → results/pine_*.csv"
 	@echo "  make plot       — графики из results/ → plots/"
 	@echo "  make clean      — удалить сборку"
-	@echo "  На Pine: sbatch task_pine.job — все уровни через SLURM"
+	@echo "  На Pine: make && sbatch task_pine.job → results/, затем make plot"
 	@echo "Переменные: NP=2 N_ITER=50 MPIRUN=mpirun"
 
 # Build with MPICH (if mpicc is not in PATH, set MPI_CC):

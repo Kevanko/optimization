@@ -17,9 +17,8 @@
 ## Что сделано в проекте
 
 - **benchmark.c** — программа ping-pong: два процесса обмениваются сообщениями заданного размера `m` байт за `n` итераций; каждый процесс вызывает `MPI_Isend` и `MPI_Irecv`, затем `MPI_Waitall`. Вывод (ранг 0): одна строка `m_bytes,t_sec` (среднее время одной передачи).
-- **run_experiments.sh** — запускает замеры для трёх уровней (memory, qpi, network) и сохраняет CSV в `results/<cluster>_<level>.csv`.
+- **task_pine.job** — задание SLURM для кластера Pine: снимает все три уровня (memory, qpi, network) и пишет CSV в `results/pine_*.csv`.
 - **plot_results.py** — строит по CSV графики t(m) и пропускная способность (МБ/с) в `plots/`.
-- **task_pine.job** — задание для постановки в очередь SLURM на кластере Pine (см. ниже).
 
 ## Зависимости
 
@@ -46,16 +45,14 @@ mpirun -np 2 ./benchmark <размер_байт> [число_итераций]
 
 ## Эксперименты и графики
 
-Имя кластера задаётся аргументом (результаты пишутся в `results/<cluster>_memory.csv`, `_qpi.csv`, `_network.csv`):
+Замеры выполняются на кластере Pine через SLURM (см. ниже). После получения CSV:
 
 ```bash
-./run_experiments.sh pine   # по умолчанию можно использовать pine
-make plot                   # или: python3 plot_results.py pine
+make plot
+# или: python3 plot_results.py pine
 ```
 
 Графики: `plots/t_vs_m_pine.pdf`, `plots/bandwidth_vs_m_pine.pdf` (и .png).
-
-**Важно:** уровень «network» (два узла) при локальном запуске возможен только если у вас два хоста в hostfile; на кластере уровень network нужно снимать через SLURM (см. ниже).
 
 ## Кластер Pine (pine.cpct.sibsutis.ru)
 
@@ -75,9 +72,9 @@ make plot                   # или: python3 plot_results.py pine
 sbatch task_pine.job
 ```
 
-В `task_pine.job`: разделение **2288**, 2 узла; уровень network — `mpiexec -np 2 ./benchmark ...` (по одному процессу на узел); уровни memory и qpi — `srun -N1 -n2 ...` (два процесса на одном узле). Результаты пишутся в `results/pine_memory.csv`, `results/pine_qpi.csv`, `results/pine_network.csv`. Вывод SLURM — в `slurm-<JOB_ID>.out`.
+В job: разделение **2288**, 2 узла; внутри скрипта — `make`, затем циклы по размерам сообщений: network через `mpiexec -np 2`, memory и qpi через `mpiexec -np 2 --map-by ppr:2:node` (оба процесса на одном узле). Результаты — `results/pine_memory.csv`, `results/pine_qpi.csv`, `results/pine_network.csv`. Вывод SLURM — в `slurm-<JOB_ID>.out`.
 
-4. После выполнения построить графики: `make plot` или `python3 plot_results.py pine`.
+4. Скопировать папку `results/` к себе и построить графики: `make plot` (или выполнить `make plot` на Pine, если установлен matplotlib).
 
 По заданию допускается не учитывать InfiniBand (например, на Oak), если он недоступен.
 
@@ -87,10 +84,9 @@ sbatch task_pine.job
 lab1/
   benchmark.c       # MPI Isend/Irecv ping-pong, замер времени
   Makefile
-  run_experiments.sh
-  plot_results.py
-  task_pine.job     # задание SLURM для Pine (2 узла, network)
-  results/          # CSV: level, m_bytes, t_sec
+  plot_results.py   # графики по CSV
+  task_pine.job     # задание SLURM для Pine (замеры → results/)
+  results/          # CSV: pine_memory.csv, pine_qpi.csv, pine_network.csv
   plots/            # графики t(m) и пропускная способность
   README.md
 ```
@@ -98,5 +94,5 @@ lab1/
 ## Объяснение для защиты
 
 - **По заданию:** тестовая программа с MPI_Isend/MPI_Irecv; время t — среднее по n выполнений в цикле с ожиданием завершения обменов на каждой итерации (у нас: `MPI_Waitall` после каждой пары Isend/Irecv).
-- **Ping-pong:** два процесса (ранги 0 и 1); каждый отправляет сообщение партнёру и принимает ответ, затем `MPI_Waitall`. Привязка к ядрам — numactl (в скриптах и в task_pine.job на кластере).
+- **Ping-pong:** два процесса (ранги 0 и 1); каждый отправляет сообщение партнёру и принимает ответ, затем `MPI_Waitall`. На Pine привязка к узлам задаётся в task_pine.job (mpiexec, map-by).
 - **Три уровня:** память (один узел, один сокет), QPI (один узел, два сокета), сеть (два узла, Gigabit Ethernet на Pine). Графики t(m) и пропускная способность строятся по CSV из экспериментов.
