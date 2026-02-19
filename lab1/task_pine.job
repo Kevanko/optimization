@@ -12,7 +12,7 @@
 #SBATCH --output=slurm-%j.out
 
 set -e
-cd "$(dirname "$0")"
+cd "${SLURM_SUBMIT_DIR:-.}"
 
 # Размеры сообщений (байт)
 SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
