@@ -1,40 +1,25 @@
-# Optimization — лабораторные работы
+# Отказоустойчивые вычислительные системы
 
-Курс: Отказоустойчивые вычислительные системы.
+Курс: лабораторные работы.
 
 ## Лабораторные
 
 | Лаба | Тема | Папка |
 |------|------|--------|
-| **1** | Пропускная способность каналов связи (MPI, NUMA/SMP, графики t(m)) | [lab1/](lab1/) |
+| **1** | Пропускная способность каналов связи (MPI Isend/Irecv, графики t(m)) | [lab1/](lab1/) |
 | **2** | Расписание параллельных задач (2D Strip Packing, NFDH/FFDH) | [lab2/](lab2/) |
 
----
+**Lab 1:** `cd lab1 && make` → `make run` или `./run_experiments.sh pine`; на кластере [Pine](https://wiki.csc.sibsutis.ru/en/ClusterPine): `sbatch task_pine.job`; графики: `make plot`. Задание: [docs/lab-1.pdf](docs/lab-1.pdf).
 
-## Lab 1 — пропускная способность каналов
+**Lab 2:** `cd lab2 && make` → `make generate` при необходимости → `./schedule <файл_задач> <n_EM> NFDH|FFDH`; эксперименты: `./run_experiments.sh`.
 
-Ping-pong с **MPI_Isend/MPI_Irecv** (два процесса). Измерение времени обмена на трёх уровнях: память узла, шина QPI, сеть между узлами. Графики t(m) и пропускная способность. Тесты на кластере **Pine** (Gigabit Ethernet), при возможности — Oak.
+Подробнее: [lab1/README.md](lab1/README.md), [lab2/README.md](lab2/README.md).
 
-- **Сборка:** `cd lab1 && make`
-- **Запуск:** `make run` или `./run_experiments.sh pine`
-- **На Pine (SLURM):** `sbatch task_pine.job`
-- **Графики:** `make plot` → `lab1/plots/`
-- Подробнее: [lab1/README.md](lab1/README.md)
+## Лекции и задания
 
----
+Лекции и тексты лабораторных положите в папку **docs/** (например, CS-lec0.pdf, CS-lec1.pdf, PDF с заданиями).
 
-## Lab 2 — расписание параллельных задач
+## Зависимости
 
-Приближённое решение задачи минимизации времени окончания T(S) сведением к 2D Strip Packing. Алгоритмы NFDH и FFDH, сортировка подсчётом, турнирное дерево для FFDH.
-
-- **Сборка:** `cd lab2 && make`
-- **Запуск:** `./schedule <файл_задач> <n_EM> NFDH|FFDH`
-- **Генерация наборов:** `make generate`; эксперименты: `./run_experiments.sh`
-- Подробнее: [lab2/README.md](lab2/README.md)
-
----
-
-## Зависимости по проекту
-
-- **Lab 1:** C, MPI (MPICH/MVAPICH2), numactl, Python 3, matplotlib
+- **Lab 1:** C, MPI (MPICH/MVAPICH2/Open MPI), numactl, Python 3, matplotlib
 - **Lab 2:** C (gcc/clang), Python 3

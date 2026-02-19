@@ -2,7 +2,7 @@
 """
 Plot t(m) and bandwidth m/t from lab1 results.
 Reads CSV from results/ (format: level,m_bytes,t_sec) and saves plots to plots/.
-Usage: python3 plot_results.py [cluster]   # cluster: pine | oak | numa | smp (default: pine)
+Usage: python3 plot_results.py [cluster]   # default: pine
 """
 
 import csv

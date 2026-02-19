@@ -5,12 +5,12 @@ schedule
 *.a
 *.so
 
+# Lab2: сгенерированные наборы задач
+lab2/data/tasks_*.txt
+
 # Результаты и графики (генерируются скриптами)
 **/results/
 **/plots/
-
-# Lab2: сгенерированные наборы задач (generate_tasks.py)
-lab2/data/tasks_*.txt
 
 # IDE и кэш
 .clangd
