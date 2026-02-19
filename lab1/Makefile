@@ -30,22 +30,23 @@ run-large: $(TARGET)
 
 # Серия экспериментов (memory, qpi, network), результаты в results/
 experiments: $(TARGET)
-	./run_experiments.sh numa
+	./run_experiments.sh pine
 
 # Графики по результатам из results/ → plots/
 plot:
-	python3 plot_results.py numa
+	python3 plot_results.py pine
 
 # Список команд
 help:
 	@echo "Lab 1 — команды:"
-	@echo "  make          — собрать benchmark"
-	@echo "  make run      — запуск: 2 процесса, 1 МБ, 50 итераций"
+	@echo "  make            — собрать benchmark"
+	@echo "  make run        — запуск: 2 процесса, 1 МБ, 50 итераций"
 	@echo "  make run-small  — 4 КБ, 100 итераций"
 	@echo "  make run-large  — 8 МБ, 20 итераций"
-	@echo "  make experiments — все уровни (memory/qpi/network) → results/"
-	@echo "  make plot     — графики из results/ → plots/"
-	@echo "  make clean    — удалить сборку"
+	@echo "  make experiments — все уровни (memory/qpi/network) → results/pine_*.csv"
+	@echo "  make plot       — графики из results/ → plots/"
+	@echo "  make clean      — удалить сборку"
+	@echo "  На Pine: sbatch task_pine.job — все уровни через SLURM"
 	@echo "Переменные: NP=2 N_ITER=50 MPIRUN=mpirun"
 
 # Build with MPICH (if mpicc is not in PATH, set MPI_CC):

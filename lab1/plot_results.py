@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Plot t(m) and optionally bandwidth m/t from lab1 results.
+Plot t(m) and bandwidth m/t from lab1 results.
 Reads CSV from results/ (format: level,m_bytes,t_sec) and saves plots to plots/.
-Usage: python3 plot_results.py [cluster]   # cluster: numa | smp (default: numa)
+Usage: python3 plot_results.py [cluster]   # cluster: pine | oak | numa | smp (default: pine)
 """
 
 import csv
@@ -109,7 +109,7 @@ def plot_bandwidth(data: dict, cluster: str, lang: str = "ru"):
 
 
 def main():
-    cluster = sys.argv[1] if len(sys.argv) > 1 else "numa"
+    cluster = sys.argv[1] if len(sys.argv) > 1 else "pine"
     data = load_results(cluster)
     if not data:
         print(f"No results found in {RESULTS_DIR} for cluster '{cluster}'")

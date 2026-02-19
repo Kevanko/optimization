@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Run bandwidth experiments for three levels: memory, qpi, network.
 # Output: results/<cluster>_<level>.csv with lines "level,m_bytes,t_sec".
-# Usage: ./run_experiments.sh [cluster]   # cluster: numa | smp (default: numa)
+# Usage: ./run_experiments.sh [cluster]   # cluster: pine | oak | numa | smp (default: pine)
 # Requires: benchmark binary in ., MPIRUN (e.g. mpirun or mpiexec), optional NUMACTL.
+# На кластере Pine уровень network снимайте через SLURM: sbatch task_pine.job
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,7 +13,7 @@ BENCHMARK="${BENCHMARK:-./benchmark}"
 MPIRUN="${MPIRUN:-mpirun}"
 NUMACTL="${NUMACTL:-numactl}"
 N_ITER="${N_ITER:-100}"
-CLUSTER="${1:-numa}"
+CLUSTER="${1:-pine}"
 
 # Message sizes: from 4KB to 8MB (bytes)
 SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"

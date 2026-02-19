@@ -1,60 +1,102 @@
-# Lab 1: Пропускная способность каналов связи
+# Лабораторная работа 1: Пропускная способность каналов связи
 
-Исследование времени передачи при MPI-обмене на трёх уровнях иерархии коммуникационной среды:
+## Цель
 
-1. **Оперативная память** узла NUMA/SMP (обмен в пределах узла).
-2. **Шина Intel QPI** (между процессорами в NUMA-узле).
-3. **Сеть между ЭМ** — InfiniBand QDR (NUMA-кластер) и Gigabit Ethernet (SMP-кластер).
+Разработать тестовую MPI-программу, реализующую **ping-pong** между двумя процессами с использованием **MPI_Isend** и **MPI_Irecv**, и измерить время передачи на трёх уровнях иерархии коммуникационной среды:
+
+1. **Оперативная память** — обмен в пределах одного узла (один NUMA-узел / одна сокет).
+2. **Шина Intel QPI** — обмен между процессорами в пределах одного сервера (два сокета).
+3. **Сеть между узлами** — Gigabit Ethernet (кластер Pine) или InfiniBand (кластер Oak; может быть недоступен).
+
+По результатам строятся графики: зависимость времени передачи от размера сообщения t(m) и пропускная способность.
+
+## Что сделано в проекте
+
+- **benchmark.c** — программа ping-pong: два процесса обмениваются сообщениями заданного размера `m` байт за `n` итераций; каждый процесс вызывает `MPI_Isend` и `MPI_Irecv`, затем `MPI_Waitall`. Вывод (ранг 0): одна строка `m_bytes,t_sec` (среднее время одной передачи).
+- **run_experiments.sh** — запускает замеры для трёх уровней (memory, qpi, network) и сохраняет CSV в `results/<cluster>_<level>.csv`.
+- **plot_results.py** — строит по CSV графики t(m) и пропускная способность (МБ/с) в `plots/`.
+- **task_pine.job** — задание для постановки в очередь SLURM на кластере Pine (см. ниже).
 
 ## Зависимости
 
-- Компилятор C и MPI (MPICH 3.2.1 или MVAPICH2 2.2)
-- Утилита `numactl` (GNU/Linux)
-- Python 3 и matplotlib для графиков
+- Компилятор C и MPI (MPICH, MVAPICH2 или Open MPI)
+- Для привязки к ядрам на узле: `numactl` (GNU/Linux)
+- Для графиков: Python 3, matplotlib
 
-## Сборка и запуск
+## Сборка и запуск локально
 
 ```bash
 make
 make run          # 2 процесса, 1 МБ, 50 итераций
 make run-small    # 4 КБ
 make run-large    # 8 МБ
-make help         # список команд
 ```
 
-Ручной запуск:
+Ручной запуск одного замера:
 
 ```bash
 mpirun -np 2 ./benchmark <размер_байт> [число_итераций]
 ```
 
-Вывод: одна строка `m_bytes,t_sec`.
+Пример: `mpirun -np 2 ./benchmark 1048576 100` — сообщение 1 МБ, 100 итераций.
 
 ## Эксперименты и графики
 
+Имя кластера задаётся аргументом (результаты пишутся в `results/<cluster>_memory.csv`, `_qpi.csv`, `_network.csv`):
+
 ```bash
-./run_experiments.sh numa   # или smp
-make plot                  # или: python3 plot_results.py numa
+./run_experiments.sh pine   # по умолчанию можно использовать pine
+make plot                   # или: python3 plot_results.py pine
 ```
 
-Результаты: `results/<cluster>_<level>.csv`. Графики t(m) и пропускная способность: `plots/t_vs_m_<cluster>.pdf`, `plots/bandwidth_vs_m_<cluster>.pdf` (и .png).
+Графики: `plots/t_vs_m_pine.pdf`, `plots/bandwidth_vs_m_pine.pdf` (и .png).
 
-## Структура
+**Важно:** уровень «network» (два узла) при локальном запуске возможен только если у вас два хоста в hostfile; на кластере уровень network нужно снимать через SLURM (см. ниже).
+
+## Кластер Pine (pine.cpct.sibsutis.ru)
+
+- Подключение: `ssh username@pine.cpct.sibsutis.ru`
+- Очереди: **2288** (Xeon Gold 5218N, 64 логических ядра на узел, 376 ГБ RAM), **rh2288** (Xeon Gold 6230N, 80 логических ядер, 256 ГБ RAM). Лимит времени задачи — 24 часа.
+- Коммуникация между узлами: **Gigabit Ethernet**.
+
+### Запуск на Pine через SLURM
+
+1. Скопировать проект на головную машину (scp, git и т.п.), зайти в каталог `lab1`.
+2. Собрать: `make` (используется `mpicc` из загруженного модуля MPI).
+3. Поставить задание в очередь — в одном job снимаются все три уровня (memory, qpi, network):
+
+```bash
+sbatch task_pine.job
+```
+
+В `task_pine.job`: разделение **2288**, 2 узла; уровень network — `mpiexec -np 2 ./benchmark ...` (по одному процессу на узел); уровни memory и qpi — `srun -N1 -n2 ...` (два процесса на одном узле). Результаты пишутся в `results/pine_memory.csv`, `results/pine_qpi.csv`, `results/pine_network.csv`. Вывод SLURM — в `slurm-<JOB_ID>.out`.
+
+4. После выполнения построить графики: `make plot` или `python3 plot_results.py pine`.
+
+Состояние очередей: `sinfo -l`, `squeue -a`. Удаление задачи: `scancel <jobid>`.
+
+Документация: [Вычислительный кластер Pine](https://wiki.csc.sibsutis.ru/en/ClusterPine), [Вычислительные ресурсы](https://wiki.csc.sibsutis.ru/en/home).
+
+## Кластер Oak (oak.cpct.sibsutis.ru)
+
+Четыре узла x86-64, InfiniBand QDR. По заданию допускается не учитывать InfiniBand, если он недоступен (например, порт в состоянии Down). При наличии доступа можно провести тесты сети между узлами и сравнить с Pine (Gigabit Ethernet).
+
+## Структура lab1
 
 ```
 lab1/
-  benchmark.c       # MPI Isend/Irecv, замер времени
+  benchmark.c       # MPI Isend/Irecv ping-pong, замер времени
   Makefile
   run_experiments.sh
   plot_results.py
+  task_pine.job     # задание SLURM для Pine (2 узла, network)
   results/          # CSV: level, m_bytes, t_sec
-  plots/            # графики t(m) и bandwidth
+  plots/            # графики t(m) и пропускная способность
   README.md
 ```
 
-## Кластеры (по заданию)
+## Объяснение для защиты
 
-- **NUMA:** 6 узлов, Intel S5520UR, 2× Xeon E5620, 24 ГБ DDR3, InfiniBand QDR (Mellanox). MVAPICH2.
-- **SMP:** 18 узлов, Intel SR2520SAF, 2× Xeon E5420, 8 ГБ DDR2, Gigabit Ethernet. MPICH или MVAPICH2.
-
-Привязка процессов к ядрам: `numactl` (см. скрипт и опции `--map-by` в README в корне).
+- **Ping-pong:** два процесса (ранги 0 и 1); на каждой итерации каждый процесс отправляет сообщение партнёру (`MPI_Isend`) и принимает ответ (`MPI_Irecv`), затем ждёт завершения (`MPI_Waitall`). Измеряется среднее время одной такой двусторонней передачи.
+- **Три уровня:** память (один узел, один сокет), QPI (один узел, два сокета), сеть (два узла). Разные уровни дают разную задержку и пропускную способность; сеть между узлами (Gigabit на Pine) обычно медленнее, чем обмен внутри узла.
+- **Графики:** по оси X — размер сообщения m (байт), по Y — время t (с) или пропускная способность (МБ/с). По ним видно, как растёт время с ростом m и где выходим на плато пропускной способности.
