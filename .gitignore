@@ -1,0 +1,36 @@
+# Сборка
+benchmark
+schedule
+*.o
+*.a
+*.so
+
+# Результаты и графики (генерируются скриптами)
+**/results/
+**/plots/
+
+# Lab2: сгенерированные наборы задач (generate_tasks.py)
+lab2/data/tasks_*.txt
+
+# IDE и кэш
+.clangd
+.clangd/
+*.clangd
+.cache/
+compile_commands.json
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+.eggs/
+venv/
+.env
+
+# SLURM
+slurm-*.out
