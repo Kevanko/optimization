@@ -38,9 +38,17 @@ echo "$FIRST_NODE" > "$HF"; echo "$FIRST_NODE" >> "$HF"
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
 for m in $SIZES; do
+  # Сначала пробуем синтаксис Open MPI (-hostfile), если вывода нет — пробуем MPICH (-f)
   out=$(mpiexec -np 2 -hostfile "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  if [ -z "$out" ]; then
+    out=$(mpiexec -np 2 -f "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  fi
   [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
+
   out=$(mpiexec -np 2 -hostfile "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  if [ -z "$out" ]; then
+    out=$(mpiexec -np 2 -f "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  fi
   [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
 done
 rm -f "$HF"
