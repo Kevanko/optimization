@@ -1,57 +1,35 @@
-#!/bin/bash
-# Лабораторная 1: замер пропускной способности на кластере Pine (Gigabit Ethernet).
-# Три уровня: memory, qpi (1 узел, 2 процесса), network (2 узла).
-# Сборка: make. Запуск: sbatch task_pine.job
-# Результаты: results/pine_memory.csv, results/pine_qpi.csv, results/pine_network.csv
+#!/bin/sh
+# Lab 1: снять замеры на Pine. Результаты: results/pine_*.csv
+# На Pine: make && sbatch task_pine.job  → потом скопировать results/ к себе и сделать make plot локально
 
-#SBATCH --job-name=lab1-bandwidth
+#SBATCH --job-name=lab1
 #SBATCH --partition=2288
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=00:15:00
 #SBATCH --output=slurm-%j.out
 
-set -e
 cd "${SLURM_SUBMIT_DIR:-.}"
-
-# Размеры сообщений (байт)
-SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
-N_ITER="${N_ITER:-100}"
-BENCHMARK="./benchmark"
 mkdir -p results
 
-echo "=== Lab 1 Pine: $SLURM_NNODES nodes, $SLURM_NTASKS tasks ==="
-echo "NODELIST: $SLURM_NODELIST"
+SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
+N=100
 
-# --- Уровень network: 2 процесса на 2 узлах (mpiexec по умолчанию разнесёт по узлам) ---
-OUT_NET="results/pine_network.csv"
-echo "level,m_bytes,t_sec" > "$OUT_NET"
+# network: 2 узла
+echo "level,m_bytes,t_sec" > results/pine_network.csv
 for m in $SIZES; do
-    out=$(mpiexec -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-    [[ -n "$out" ]] && echo "network,$out" >> "$OUT_NET"
+  out=$(mpiexec -np 2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "network,$out" >> results/pine_network.csv
 done
-echo "Wrote $OUT_NET"
 
-# --- Уровни memory и qpi: 2 процесса на одном узле (srun -N1 -n2) ---
-OUT_MEM="results/pine_memory.csv"
-OUT_QPI="results/pine_qpi.csv"
-echo "level,m_bytes,t_sec" > "$OUT_MEM"
-echo "level,m_bytes,t_sec" > "$OUT_QPI"
-
+# memory и qpi: 1 узел, 2 процесса
+echo "level,m_bytes,t_sec" > results/pine_memory.csv
+echo "level,m_bytes,t_sec" > results/pine_qpi.csv
 for m in $SIZES; do
-    # memory: оба процесса на одном узле (привязка к одному узлу через numactl при наличии)
-    if command -v numactl &>/dev/null; then
-        out=$(srun -N1 -n2 numactl --cpunodebind=0 --membind=0 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-    else
-        out=$(srun -N1 -n2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-    fi
-    [[ -n "$out" ]] && echo "memory,$out" >> "$OUT_MEM"
-
-    # qpi: два процесса на одном узле (разные сокеты — без жёсткой привязки к одному NUMA-узлу)
-    out=$(srun -N1 -n2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-    [[ -n "$out" ]] && echo "qpi,$out" >> "$OUT_QPI"
+  out=$(srun -N1 -n2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "memory,$out" >> results/pine_memory.csv
+  out=$(srun -N1 -n2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  [ -n "$out" ] && echo "qpi,$out" >> results/pine_qpi.csv
 done
-echo "Wrote $OUT_MEM"
-echo "Wrote $OUT_QPI"
 
-echo "=== Done. Build plots with: make plot (or python3 plot_results.py pine) ==="
+echo "Done. Results in results/"

@@ -5,7 +5,7 @@
 # Requires: benchmark in ., MPIRUN (mpirun/mpiexec), optional numactl.
 
 set -e
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 BENCHMARK="${BENCHMARK:-./benchmark}"
@@ -27,7 +27,7 @@ run_one() {
     local opts="$3"
     local out
     out=$("$MPIRUN" $opts -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-    if [[ -n "$out" ]]; then
+    if [ -n "$out" ]; then
         echo "${level},${out}"
     fi
 }
@@ -39,12 +39,12 @@ run_level_memory() {
     echo "level,m_bytes,t_sec" > "$outfile"
     for m in $SIZES; do
         # Both ranks on same node; same socket preferred for "memory" (use numactl to bind to one node)
-        if command -v "$NUMACTL" &>/dev/null; then
+        if command -v "$NUMACTL" >/dev/null 2>&1; then
             out=$(numactl --cpunodebind=0 --membind=0 "$MPIRUN" -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
         else
             out=$("$MPIRUN" -np 2 --map-by ppr:2:node "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
         fi
-        [[ -n "$out" ]] && echo "${level},${out}" >> "$outfile"
+        [ -n "$out" ] && echo "${level},${out}" >> "$outfile"
     done
     echo "Wrote $outfile"
 }
@@ -58,8 +58,8 @@ run_level_qpi() {
         # Two sockets on one node: Open MPI --map-by ppr:1:socket
         out=$("$MPIRUN" -np 2 --map-by ppr:1:socket "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
         # MPICH/MVAPICH2: try -bind-to socket or leave to default (may need hostfile with one host)
-        [[ -z "$out" ]] && out=$("$MPIRUN" -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-        [[ -n "$out" ]] && echo "${level},${out}" >> "$outfile"
+        [ -z "$out" ] && out=$("$MPIRUN" -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
+        [ -n "$out" ] && echo "${level},${out}" >> "$outfile"
     done
     echo "Wrote $outfile"
 }
@@ -72,13 +72,13 @@ run_level_network() {
     for m in $SIZES; do
         # Two nodes: --map-by ppr:1:node or use hostfile with two hosts
         out=$("$MPIRUN" -np 2 --map-by ppr:1:node "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-        [[ -z "$out" ]] && out=$("$MPIRUN" -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
-        [[ -n "$out" ]] && echo "${level},${out}" >> "$outfile"
+        [ -z "$out" ] && out=$("$MPIRUN" -np 2 "$BENCHMARK" "$m" "$N_ITER" 2>/dev/null | head -1)
+        [ -n "$out" ] && echo "${level},${out}" >> "$outfile"
     done
     echo "Wrote $outfile"
 }
 
-if [[ ! -x "$BENCHMARK" ]]; then
+if [ ! -x "$BENCHMARK" ]; then
     echo "Build benchmark first: make"
     exit 1
 fi
