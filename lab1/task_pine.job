@@ -31,13 +31,13 @@ for m in $SIZES; do
   [ -n "$out" ] && echo "network,$out" >> results/pine_network.csv
 done
 
-# memory и qpi: 1 узел, 2 процесса
+# memory и qpi: 1 узел, 2 процесса (mpiexec с привязкой к одному узлу)
 echo "level,m_bytes,t_sec" > results/pine_memory.csv
 echo "level,m_bytes,t_sec" > results/pine_qpi.csv
 for m in $SIZES; do
-  out=$(srun -N1 -n2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  out=$(mpiexec -np 2 --map-by ppr:2:node ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "memory,$out" >> results/pine_memory.csv
-  out=$(srun -N1 -n2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  out=$(mpiexec -np 2 --map-by ppr:2:node ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "qpi,$out" >> results/pine_qpi.csv
 done
 
