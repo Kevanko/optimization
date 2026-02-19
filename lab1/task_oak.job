@@ -6,7 +6,7 @@
 #SBATCH --job-name=lab1-oak
 #SBATCH --partition=debug
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=2
 #SBATCH --time=00:15:00
 #SBATCH --output=slurm-%j.out
 
@@ -19,26 +19,26 @@ make
 SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
 N=100
 
-echo "=== test mpiexec -np 2 ./benchmark 4096 2 ==="
-mpiexec -np 2 ./benchmark 4096 2
+echo "=== test srun -N2 -n2 ./benchmark 4096 2 ==="
+srun -N2 -n2 ./benchmark 4096 2
 echo "=== end test ==="
 
-# network: 2 узла
+# network: 2 узла (2 процесса, по одному на узел)
 echo "level,m_bytes,t_sec" > results/oak_network.csv
 for m in $SIZES; do
-  out=$(mpiexec -np 2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
+  out=$(srun -N2 -n2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "network,$out" >> results/oak_network.csv
 done
 
-# memory и qpi: оба процесса на одном узле через srun (надёжно для SLURM на OAK)
+# memory и qpi: оба процесса на одном узле через srun
 FIRST_NODE=$(scontrol show hostnames "$SLURM_NODELIST" 2>/dev/null | head -1)
 [ -z "$FIRST_NODE" ] && FIRST_NODE=$(hostname)
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
 for m in $SIZES; do
-  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" | head -1)
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
-  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" | head -1)
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
 done
 
