@@ -8,10 +8,6 @@ schedule
 # Lab2: сгенерированные наборы задач
 lab2/data/tasks_*.txt
 
-# Результаты и графики (генерируются скриптами)
-**/results/
-**/plots/
-
 # IDE и кэш
 .clangd
 .clangd/
