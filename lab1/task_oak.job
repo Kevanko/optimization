@@ -30,27 +30,16 @@ for m in $SIZES; do
   [ -n "$out" ] && echo "network,$out" >> results/oak_network.csv
 done
 
-# memory и qpi: оба процесса на одном узле (hostfile — надёжнее на OAK, чем --map-by ppr:2:node)
-FIRST_NODE=$(scontrol show hostnames $SLURM_NODELIST 2>/dev/null | head -1)
+# memory и qpi: оба процесса на одном узле через srun (надёжно для SLURM на OAK)
+FIRST_NODE=$(scontrol show hostnames "$SLURM_NODELIST" 2>/dev/null | head -1)
 [ -z "$FIRST_NODE" ] && FIRST_NODE=$(hostname)
-HF=/tmp/lab1_oak_host_$$.txt
-echo "$FIRST_NODE" > "$HF"; echo "$FIRST_NODE" >> "$HF"
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
 for m in $SIZES; do
-  # Сначала пробуем синтаксис Open MPI (-hostfile), если вывода нет — пробуем MPICH (-f)
-  out=$(mpiexec -np 2 -hostfile "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  if [ -z "$out" ]; then
-    out=$(mpiexec -np 2 -f "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  fi
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
-
-  out=$(mpiexec -np 2 -hostfile "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  if [ -z "$out" ]; then
-    out=$(mpiexec -np 2 -f "$HF" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  fi
+  out=$(srun -N1 -n2 -w "$FIRST_NODE" ./benchmark "$m" "$N" 2>/dev/null | head -1)
   [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
 done
-rm -f "$HF"
 
 echo "Done. Results in results/"
