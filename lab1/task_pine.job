@@ -1,6 +1,6 @@
 #!/bin/sh
 # Lab 1: снять замеры на Pine. Результаты: results/pine_*.csv
-# На Pine: make && sbatch task_pine.job  → потом скопировать results/ к себе и сделать make plot локально
+# На Pine: sbatch task_pine.job  (make выполнится в job). Потом скопировать results/ к себе и make plot локально.
 
 #SBATCH --job-name=lab1
 #SBATCH --partition=2288
@@ -12,8 +12,17 @@
 cd "${SLURM_SUBMIT_DIR:-.}"
 mkdir -p results
 
+# Загрузить MPI и собрать (на Pine перед sbatch можно сделать: module load mpi)
+module load mpi 2>/dev/null || module load openmpi 2>/dev/null || true
+make
+
 SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
 N=100
+
+# Проверка: один запуск в лог (если в CSV пусто — смотри вывод ниже)
+echo "=== test mpiexec -np 2 ./benchmark 4096 2 ==="
+mpiexec -np 2 ./benchmark 4096 2
+echo "=== end test ==="
 
 # network: 2 узла
 echo "level,m_bytes,t_sec" > results/pine_network.csv
