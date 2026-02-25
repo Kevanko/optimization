@@ -1,12 +1,8 @@
 #!/bin/sh
-# Lab 1: снять замеры на кластере OAK. Результаты: results/oak_*.csv
-# На OAK: sbatch task_oak.job  (make в job). Затем скопировать results/ и: make plot oak  или  make plot-all
-# Уточни на кафедре: имя партиции (partition) и наличие module load mpi — при необходимости отредактируй #SBATCH и module.
-
 #SBATCH --job-name=lab1-oak
 #SBATCH --partition=debug
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --exclusive         # ЗАБИРАЕМ УЗЛЫ ЦЕЛИКОМ
 #SBATCH --time=00:15:00
 #SBATCH --output=slurm-%j.out
 
@@ -16,30 +12,20 @@ mkdir -p results
 module load mpi 2>/dev/null || module load openmpi 2>/dev/null || true
 make
 
-SIZES="4096 16384 65536 262144 1048576 2097152 4194304 8388608"
-N=100
-
-echo "=== test mpiexec -np 2 ./benchmark 4096 2 ==="
-mpiexec -np 2 ./benchmark 4096 2
+echo "=== test mpiexec -np 2 ./benchmark (sweep) ==="
+mpiexec -np 2 ./benchmark
 echo "=== end test ==="
 
-# network: 2 узла (2 процесса, по одному на узел) через mpiexec
+# Уровень сети (InfiniBand): процессы на разных узлах
 echo "level,m_bytes,t_sec" > results/oak_network.csv
-for m in $SIZES; do
-  out=$(mpiexec -np 2 ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  [ -n "$out" ] && echo "network,$out" >> results/oak_network.csv
-done
+mpiexec -np 2 --map-by ppr:1:node ./benchmark 2>/dev/null | awk '{print "network," $0}' >> results/oak_network.csv
 
-# memory и qpi: оба процесса на одном узле — через mpiexec с hostlist
-FIRST_NODE=$(scontrol show hostnames "$SLURM_NODELIST" 2>/dev/null | head -1)
-[ -z "$FIRST_NODE" ] && FIRST_NODE=$(hostname)
+# Уровень ОЗУ: оба процесса на одном сокете
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
+mpiexec -np 2 --map-by ppr:2:socket ./benchmark 2>/dev/null | awk '{print "memory," $0}' >> results/oak_memory.csv
+
+# Уровень QPI: процессы на разных сокетах внутри одного узла
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
-for m in $SIZES; do
-  out=$(mpiexec -np 2 --host "${FIRST_NODE},${FIRST_NODE}" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  [ -n "$out" ] && echo "memory,$out" >> results/oak_memory.csv
-  out=$(mpiexec -np 2 --host "${FIRST_NODE},${FIRST_NODE}" ./benchmark "$m" "$N" 2>/dev/null | head -1)
-  [ -n "$out" ] && echo "qpi,$out" >> results/oak_qpi.csv
-done
+mpiexec -np 2 --map-by ppr:1:socket ./benchmark 2>/dev/null | awk '{print "qpi," $0}' >> results/oak_qpi.csv
 
 echo "Done. Results in results/"
