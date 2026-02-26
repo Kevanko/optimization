@@ -1,0 +1,2 @@
+oak-cn2 slots=8
+oak-cn3 slots=8
