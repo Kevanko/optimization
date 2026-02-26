@@ -2,7 +2,7 @@
 #SBATCH --job-name=lab1-pine
 #SBATCH --partition=2288
 #SBATCH --nodes=2
-#SBATCH --exclusive         # ЗАБИРАЕМ УЗЛЫ ЦЕЛИКОМ, чтобы SLURM не блокировал ядра
+#SBATCH --exclusive    
 #SBATCH --time=00:15:00
 #SBATCH --output=slurm-%j.out
 
