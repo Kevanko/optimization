@@ -14,6 +14,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
 except ImportError:
     sys.exit("Install matplotlib: pip install matplotlib")
 
@@ -80,7 +81,7 @@ def load_results(cluster: str):
     return data
 
 
-def plot_t_vs_m(data: dict, cluster: str, lang: str = "ru"):
+def plot_t_vs_m(data: dict, cluster: str, lang: str = "ru", pdf_pages=None):
     """График зависимости t(m) — время передачи сообщения размером m байт (п.3 задания)."""
     labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -103,10 +104,12 @@ def plot_t_vs_m(data: dict, cluster: str, lang: str = "ru"):
         out = PLOTS_DIR / f"t_vs_m_{cluster}.{ext}"
         fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
+    if pdf_pages is not None:
+        pdf_pages.savefig(fig, bbox_inches="tight")
     plt.close()
 
 
-def plot_bandwidth(data: dict, cluster: str, lang: str = "ru"):
+def plot_bandwidth(data: dict, cluster: str, lang: str = "ru", pdf_pages=None):
     """Пропускная способность (МБ/с) от размера сообщения m."""
     labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -129,10 +132,12 @@ def plot_bandwidth(data: dict, cluster: str, lang: str = "ru"):
         out = PLOTS_DIR / f"bandwidth_vs_m_{cluster}.{ext}"
         fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
+    if pdf_pages is not None:
+        pdf_pages.savefig(fig, bbox_inches="tight")
     plt.close()
 
 
-def plot_t_vs_m_comparison(clusters_data: dict, lang: str = "ru"):
+def plot_t_vs_m_comparison(clusters_data: dict, lang: str = "ru", pdf_pages=None):
     """Сводный график t(m): Pine и OAK на одних осях (по уровням)."""
     labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
     fig, ax = plt.subplots(figsize=(8, 5.5))
@@ -157,10 +162,12 @@ def plot_t_vs_m_comparison(clusters_data: dict, lang: str = "ru"):
         out = PLOTS_DIR / ("t_vs_m_pine_vs_oak." + ext)
         fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
+    if pdf_pages is not None:
+        pdf_pages.savefig(fig, bbox_inches="tight")
     plt.close()
 
 
-def plot_bandwidth_comparison(clusters_data: dict, lang: str = "ru"):
+def plot_bandwidth_comparison(clusters_data: dict, lang: str = "ru", pdf_pages=None):
     """Сводный график пропускной способности: Pine и OAK на одних осях."""
     labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
     fig, ax = plt.subplots(figsize=(8, 5.5))
@@ -185,6 +192,8 @@ def plot_bandwidth_comparison(clusters_data: dict, lang: str = "ru"):
         out = PLOTS_DIR / ("bandwidth_vs_m_pine_vs_oak." + ext)
         fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
+    if pdf_pages is not None:
+        pdf_pages.savefig(fig, bbox_inches="tight")
     plt.close()
 
 
@@ -192,18 +201,22 @@ def main():
     cluster = sys.argv[1] if len(sys.argv) > 1 else "pine"
     if cluster == "all":
         clusters_data = {}
-        for c in ("pine", "oak"):
-            d = load_results(c)
-            if d:
-                clusters_data[c] = d
-                plot_t_vs_m(d, c, lang="ru")
-                plot_bandwidth(d, c, lang="ru")
-        if len(clusters_data) >= 2:
-            plot_t_vs_m_comparison(clusters_data, lang="ru")
-            plot_bandwidth_comparison(clusters_data, lang="ru")
-        elif not clusters_data:
-            print(f"No results in {RESULTS_DIR}. Run sbatch task_pine.job and/or task_oak.job on clusters.")
-            sys.exit(1)
+        PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+        one_pdf = PLOTS_DIR / "lab1_all.pdf"
+        with PdfPages(one_pdf) as pdf:
+            for c in ("pine", "oak"):
+                d = load_results(c)
+                if d:
+                    clusters_data[c] = d
+                    plot_t_vs_m(d, c, lang="ru", pdf_pages=pdf)
+                    plot_bandwidth(d, c, lang="ru", pdf_pages=pdf)
+            if len(clusters_data) >= 2:
+                plot_t_vs_m_comparison(clusters_data, lang="ru", pdf_pages=pdf)
+                plot_bandwidth_comparison(clusters_data, lang="ru", pdf_pages=pdf)
+            elif not clusters_data:
+                print(f"No results in {RESULTS_DIR}. Run sbatch task_pine.job and/or task_oak.job on clusters.")
+                sys.exit(1)
+        print(f"Saved {one_pdf} (all figures in one PDF)")
         return
     data = load_results(cluster)
     if not data:
