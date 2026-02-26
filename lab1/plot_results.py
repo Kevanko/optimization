@@ -34,6 +34,29 @@ LEVEL_LABELS_EN = {
     "network": "Network (between nodes)",
 }
 
+# Короткие подписи для легенды (чтобы не залезала на график)
+LEVEL_LABELS_SHORT = {
+    "memory": "Память (NUMA)",
+    "qpi": "QPI (сокеты)",
+    "network": "Сеть",
+}
+
+# Легенда под графиком: график остается по центру без пустой правой полосы
+LEGEND_KW = dict(
+    loc="upper center",
+    bbox_to_anchor=(0.5, -0.14),
+    ncol=3,
+    frameon=True,
+    fontsize=9,
+)
+LEGEND_KW_COMPARISON = dict(
+    loc="upper center",
+    bbox_to_anchor=(0.5, -0.15),
+    ncol=2,
+    frameon=True,
+    fontsize=8,
+)
+
 
 def load_results(cluster: str):
     """Load all level CSVs for cluster into {level: [(m_bytes, t_sec), ...]}."""
@@ -59,18 +82,18 @@ def load_results(cluster: str):
 
 def plot_t_vs_m(data: dict, cluster: str, lang: str = "ru"):
     """График зависимости t(m) — время передачи сообщения размером m байт (п.3 задания)."""
-    labels = LEVEL_LABELS if lang == "ru" else LEVEL_LABELS_EN
-    fig, ax = plt.subplots()
+    labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
+    fig, ax = plt.subplots(figsize=(7, 5))
     for level, points in data.items():
         if not points:
             continue
         m_vals = [p[0] for p in points]
         t_vals = [p[1] for p in points]
-        ax.plot(m_vals, t_vals, "o-", label=labels.get(level, level))
-    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)")
-    ax.set_ylabel("t, с" if lang == "ru" else "Time (s)")
-    ax.set_title("Зависимость времени передачи t от размера сообщения m" if lang == "ru" else f"Transfer time t(m) — {cluster.upper()} cluster")
-    ax.legend()
+        ax.plot(m_vals, t_vals, "o-", label=labels.get(level, level), markersize=6)
+    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)", fontsize=10)
+    ax.set_ylabel("t, с" if lang == "ru" else "Time (s)", fontsize=10)
+    ax.set_title("Зависимость времени передачи t от размера сообщения m" if lang == "ru" else f"Transfer time t(m) — {cluster.upper()} cluster", fontsize=11)
+    ax.legend(**LEGEND_KW)
     ax.grid(True, alpha=0.3)
     if max(m for points in data.values() for m, _ in points) > 1e6:
         ax.set_xscale("log")
@@ -78,25 +101,25 @@ def plot_t_vs_m(data: dict, cluster: str, lang: str = "ru"):
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
         out = PLOTS_DIR / f"t_vs_m_{cluster}.{ext}"
-        fig.savefig(out)
+        fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
     plt.close()
 
 
 def plot_bandwidth(data: dict, cluster: str, lang: str = "ru"):
     """Пропускная способность (МБ/с) от размера сообщения m."""
-    labels = LEVEL_LABELS if lang == "ru" else LEVEL_LABELS_EN
-    fig, ax = plt.subplots()
+    labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
+    fig, ax = plt.subplots(figsize=(7, 5))
     for level, points in data.items():
         if not points:
             continue
         m_vals = [p[0] for p in points]
         bw_mbs = [p[0] / (1024 * 1024) / p[1] if p[1] > 0 else 0 for p in points]
-        ax.plot(m_vals, bw_mbs, "o-", label=labels.get(level, level))
-    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)")
-    ax.set_ylabel("МБ/с" if lang == "ru" else "Bandwidth (MB/s)")
-    ax.set_title("Пропускная способность от размера сообщения m" if lang == "ru" else f"Bandwidth vs message size — {cluster.upper()}")
-    ax.legend()
+        ax.plot(m_vals, bw_mbs, "o-", label=labels.get(level, level), markersize=6)
+    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)", fontsize=10)
+    ax.set_ylabel("МБ/с" if lang == "ru" else "Bandwidth (MB/s)", fontsize=10)
+    ax.set_title("Пропускная способность от размера сообщения m" if lang == "ru" else f"Bandwidth vs message size — {cluster.upper()}", fontsize=11)
+    ax.legend(**LEGEND_KW)
     ax.grid(True, alpha=0.3)
     if max(m for points in data.values() for m, _ in points) > 1e6:
         ax.set_xscale("log")
@@ -104,26 +127,26 @@ def plot_bandwidth(data: dict, cluster: str, lang: str = "ru"):
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
         out = PLOTS_DIR / f"bandwidth_vs_m_{cluster}.{ext}"
-        fig.savefig(out)
+        fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
     plt.close()
 
 
 def plot_t_vs_m_comparison(clusters_data: dict, lang: str = "ru"):
     """Сводный график t(m): Pine и OAK на одних осях (по уровням)."""
-    labels = LEVEL_LABELS if lang == "ru" else LEVEL_LABELS_EN
-    fig, ax = plt.subplots()
+    labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
+    fig, ax = plt.subplots(figsize=(8, 5.5))
     for cluster, data in clusters_data.items():
         for level, points in data.items():
             if not points:
                 continue
             m_vals = [p[0] for p in points]
             t_vals = [p[1] for p in points]
-            ax.plot(m_vals, t_vals, "o-", label=f"{cluster.upper()} — {labels.get(level, level)}")
-    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)")
-    ax.set_ylabel("t, с" if lang == "ru" else "Time (s)")
-    ax.set_title("Время передачи t(m): сравнение Pine и OAK" if lang == "ru" else "Transfer time t(m) — Pine vs OAK")
-    ax.legend()
+            ax.plot(m_vals, t_vals, "o-", label=f"{cluster.upper()} — {labels.get(level, level)}", markersize=5)
+    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)", fontsize=10)
+    ax.set_ylabel("t, с" if lang == "ru" else "Time (s)", fontsize=10)
+    ax.set_title("Время передачи t(m): сравнение Pine и OAK" if lang == "ru" else "Transfer time t(m) — Pine vs OAK", fontsize=11)
+    ax.legend(**LEGEND_KW_COMPARISON)
     ax.grid(True, alpha=0.3)
     all_m = [m for data in clusters_data.values() for points in data.values() for m, _ in points]
     if all_m and max(all_m) > 1e6:
@@ -131,27 +154,27 @@ def plot_t_vs_m_comparison(clusters_data: dict, lang: str = "ru"):
     fig.tight_layout()
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
-        out = PLOTS_DIR / "t_vs_m_pine_vs_oak." + ext
-        fig.savefig(out)
+        out = PLOTS_DIR / ("t_vs_m_pine_vs_oak." + ext)
+        fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
     plt.close()
 
 
 def plot_bandwidth_comparison(clusters_data: dict, lang: str = "ru"):
     """Сводный график пропускной способности: Pine и OAK на одних осях."""
-    labels = LEVEL_LABELS if lang == "ru" else LEVEL_LABELS_EN
-    fig, ax = plt.subplots()
+    labels = (LEVEL_LABELS_SHORT if lang == "ru" else LEVEL_LABELS_EN)
+    fig, ax = plt.subplots(figsize=(8, 5.5))
     for cluster, data in clusters_data.items():
         for level, points in data.items():
             if not points:
                 continue
             m_vals = [p[0] for p in points]
             bw_mbs = [p[0] / (1024 * 1024) / p[1] if p[1] > 0 else 0 for p in points]
-            ax.plot(m_vals, bw_mbs, "o-", label=f"{cluster.upper()} — {labels.get(level, level)}")
-    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)")
-    ax.set_ylabel("МБ/с" if lang == "ru" else "Bandwidth (MB/s)")
-    ax.set_title("Пропускная способность: сравнение Pine и OAK" if lang == "ru" else "Bandwidth — Pine vs OAK")
-    ax.legend()
+            ax.plot(m_vals, bw_mbs, "o-", label=f"{cluster.upper()} — {labels.get(level, level)}", markersize=5)
+    ax.set_xlabel("m, байт" if lang == "ru" else "Message size (bytes)", fontsize=10)
+    ax.set_ylabel("МБ/с" if lang == "ru" else "Bandwidth (MB/s)", fontsize=10)
+    ax.set_title("Пропускная способность: сравнение Pine и OAK" if lang == "ru" else "Bandwidth — Pine vs OAK", fontsize=11)
+    ax.legend(**LEGEND_KW_COMPARISON)
     ax.grid(True, alpha=0.3)
     all_m = [m for data in clusters_data.values() for points in data.values() for m, _ in points]
     if all_m and max(all_m) > 1e6:
@@ -159,8 +182,8 @@ def plot_bandwidth_comparison(clusters_data: dict, lang: str = "ru"):
     fig.tight_layout()
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
-        out = PLOTS_DIR / "bandwidth_vs_m_pine_vs_oak." + ext
-        fig.savefig(out)
+        out = PLOTS_DIR / ("bandwidth_vs_m_pine_vs_oak." + ext)
+        fig.savefig(out, bbox_inches="tight")
         print(f"Saved {out}")
     plt.close()
 
