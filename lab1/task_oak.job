@@ -2,6 +2,7 @@
 #SBATCH --job-name=lab1-oak
 #SBATCH --partition=debug
 #SBATCH --nodes=2
+#SBATCH --ntasks-per-node=8   # Даем OpenMPI понять, что слотов на узле много
 #SBATCH --exclusive
 #SBATCH --time=00:15:00
 #SBATCH --output=slurm-%j.out
@@ -9,29 +10,26 @@
 cd "${SLURM_SUBMIT_DIR:-.}"
 mkdir -p results
 
-module load mpi || true
+# Убрали module load, так как MPI уже в PATH
 make
 
 echo "=== test mpiexec -np 2 ./benchmark (sweep) ==="
 mpiexec -np 2 ./benchmark
 echo "=== end test ==="
 
-# Получаем имена узлов, которые нам выделил SLURM
+# Вытаскиваем имена узлов
 NODE1=$(scontrol show hostnames "$SLURM_NODELIST" | head -1)
 NODE2=$(scontrol show hostnames "$SLURM_NODELIST" | tail -1)
 
-# Создаем файл со списком выделенных узлов
-scontrol show hostnames "$SLURM_NODELIST" > hosts.txt
-
-# Уровень сети (InfiniBand): MPI сам прочитает узлы из файла и кинет по 1 процессу на каждый
+# Уровень сети (InfiniBand): 1 процесс на NODE1, 1 процесс на NODE2
 echo "level,m_bytes,t_sec" > results/oak_network.csv
-mpiexec -np 2 -machinefile hosts.txt ./benchmark | awk '{print "network," $0}' >> results/oak_network.csv
+mpiexec -np 1 --host "$NODE1" ./benchmark : -np 1 --host "$NODE2" ./benchmark | awk '{print "network," $0}' >> results/oak_network.csv
 
-# Уровень ОЗУ: оба процесса на 1 узле, жестко привязаны к нулевому сокету (numanode 0)
+# Уровень ОЗУ: оба процесса на NODE1, привязка к процессору (NUMA) 0
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
-mpiexec -np 2 --host "$NODE1,$NODE1" numactl --cpunodebind=0 --membind=0 ./benchmark | awk '{print "memory," $0}' >> results/oak_memory.csv
+mpiexec -np 2 --host "$NODE1" numactl --cpunodebind=0 --membind=0 ./benchmark | awk '{print "memory," $0}' >> results/oak_memory.csv
 
-# Уровень QPI: оба на 1 узле, но разнесены по разным сокетам (через двоеточие для MPICH)
+# Уровень QPI: оба на NODE1, но первый процесс на процессоре 0, второй на процессоре 1
 echo "level,m_bytes,t_sec" > results/oak_qpi.csv
 mpiexec -np 1 --host "$NODE1" numactl --cpunodebind=0 --membind=0 ./benchmark : -np 1 --host "$NODE1" numactl --cpunodebind=1 --membind=1 ./benchmark | awk '{print "qpi," $0}' >> results/oak_qpi.csv
 
