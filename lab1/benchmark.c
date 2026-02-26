@@ -103,8 +103,10 @@ int main(int argc, char **argv)
         }
 
         double t_avg = run_pingpong(m, n, rank, partner);
-        if (rank == 0)
+        if (rank == 0) {
             printf("%zu,%.9g\n", m, t_avg);
+            fflush(stdout);
+        }
 
         MPI_Finalize();
         return 0;
@@ -116,8 +118,10 @@ int main(int argc, char **argv)
     for (size_t i = 0; i < sizeof(MSG_SIZES) / sizeof(MSG_SIZES[0]); ++i) {
         size_t m = MSG_SIZES[i];
         double t_avg = run_pingpong(m, n_iters, rank, partner);
-        if (rank == 0)
+        if (rank == 0) {
             printf("%zu,%.9g\n", m, t_avg);
+            fflush(stdout);
+        }
     }
 
     MPI_Finalize();
