@@ -20,9 +20,12 @@ echo "=== end test ==="
 NODE1=$(scontrol show hostnames "$SLURM_NODELIST" | head -1)
 NODE2=$(scontrol show hostnames "$SLURM_NODELIST" | tail -1)
 
-# Уровень сети: принудительно кидаем процессы на разные узлы
+# Создаем файл со списком выделенных узлов
+scontrol show hostnames "$SLURM_NODELIST" > hosts.txt
+
+# Уровень сети (InfiniBand): MPI сам прочитает узлы из файла и кинет по 1 процессу на каждый
 echo "level,m_bytes,t_sec" > results/oak_network.csv
-mpiexec -np 2 --host "$NODE1,$NODE2" ./benchmark | awk '{print "network," $0}' >> results/oak_network.csv
+mpiexec -np 2 -machinefile hosts.txt ./benchmark | awk '{print "network," $0}' >> results/oak_network.csv
 
 # Уровень ОЗУ: оба процесса на 1 узле, жестко привязаны к нулевому сокету (numanode 0)
 echo "level,m_bytes,t_sec" > results/oak_memory.csv
