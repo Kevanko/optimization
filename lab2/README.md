@@ -1,33 +1,24 @@
-# Lab 2: Расписание параллельных задач (2D Strip Packing)
+# Lab 2: Strip Packing Experiments
 
-Минимизация времени окончания T(S) на распределённой ВС при ограничениях на число ЭМ. Сведение к упаковке прямоугольников в полосу (2DSP): задача j — прямоугольник r_j × t_j, ширина полосы n (число ЭМ).
+Project structure:
 
-**Алгоритмы:** NFDH (Next Fit Decreasing Height), FFDH (First Fit Decreasing Height). Сортировка по высоте — подсчётом (t_j ∈ [1, 100]). FFDH: поиск уровня за O(log n) через турнирное дерево.
+- `main.py` - orchestrates experiments for tasks 2, 3, 4.
+- `data_handler.py` - random task generation and LLNL SWF parsing.
+- `algorithms.py` - `counting_sort`, `nfdh`, `ffdh`.
+- `tournament_tree.py` - data structure for fast level search in FFDH.
+- `metrics.py` - lower bound, epsilon, and statistics.
+- `plotter.py` - graph plotting and saving.
+- `data/` - input logs (put `LLNL-UBGL-2006-2.swf` here).
+- `graphs/` - generated figures.
 
-## Зависимости
-
-C (gcc/clang), Python 3.
-
-## Сборка и запуск
-
-Файлы `data/tasks_*.txt`, каталоги `results/` и `plots/` генерируются скриптами (не в репозитории).
-
-```bash
-make
-./schedule <файл_задач> <n_EM> NFDH|FFDH
-```
-
-Формат файла: каждая строка — `r_j t_j`. Вывод: T(S), T', ε, время. ε = (T(S) − T') / T'.
-
-## Генерация данных и эксперименты
+## Run
 
 ```bash
-make generate                    # data/tasks_*.txt
-./run_experiments.sh             # п.2–п.3: time_n*.csv, epsilon_n1024.csv
-./run_experiments_workload.sh    # п.4: epsilon_workload.csv (m=500,1000,1500)
-python3 analyze_results.py       # графики в plots/, ответы в консоль
+python3 main.py
 ```
 
-Или: `make experiments` (generate + run_experiments.sh + analyze), `make experiments-workload` для п.4.
+Expected outputs:
 
-Ответы на вопросы и контрольные — [ANSWERS.md](ANSWERS.md).
+- `graphs/time_complexity.png`
+- `graphs/random_stats.png`
+- `graphs/llnl_stats.png` (if LLNL file exists)

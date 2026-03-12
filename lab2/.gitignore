@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local virtual environments
+.venv/
+venv/
+
+# Generated graphs (keep directory in git via .gitkeep)
+graphs/*.png
+graphs/*.pdf
+!graphs/.gitkeep
+
+# Local data files (keep directory in git via .gitkeep)
+data/*.swf
+!data/.gitkeep
