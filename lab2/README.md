@@ -1,48 +1,57 @@
-# Lab 2: Strip Packing Experiments
+# Лабораторная работа 2: эксперименты по задаче 2D Strip Packing
 
-Project structure:
+## Структура проекта
 
-- `main.py` - supports both experiments (tasks 2, 3, 4) and single-run mode (task 1).
-- `data_handler.py` - random task generation and LLNL SWF parsing.
-- `algorithms.py` - `counting_sort`, `nfdh`, `ffdh`.
-- `tournament_tree.py` - data structure for fast level search in FFDH.
-- `metrics.py` - lower bound, epsilon, and statistics.
-- `plotter.py` - graph plotting and saving.
-- `data/` - input logs (put `LLNL-UBGL-2006-2.swf` here).
-- `graphs/` - generated figures.
+- `main.py` - запуск всех экспериментов (задания 2, 3, 4) и одиночного прогона (задание 1).
+- `data_handler.py` - генерация случайных задач и парсинг LLNL-логов в формате SWF.
+- `algorithms.py` - реализация `counting_sort`, `nfdh`, `ffdh`.
+- `tournament_tree.py` - дерево турнира для быстрого поиска уровня в FFDH.
+- `metrics.py` - вычисление нижней границы `T'`, отклонения `epsilon` и статистик.
+- `plotter.py` - построение и сохранение графиков.
+- `data/` - входные данные (`LLNL-UBGL-2006-2.swf`, `tasks_example.txt`).
+- `graphs/` - сохраненные графики.
 
-## Run experiments
+## Запуск всех экспериментов
 
 ```bash
 python3 main.py
 ```
 
-Expected outputs:
+После запуска формируются:
 
-- `graphs/time_complexity.png` (for `n = 1024` and `n = 4096`)
-- `graphs/random_stats.png`
-- `graphs/llnl_stats.png` (if LLNL file exists, for `m = 500, 1000, 1500`)
+- `graphs/time_complexity.png` - сравнение времени работы NFDH/FFDH для `n = 1024` и `n = 4096`.
+- `graphs/random_stats.png` - среднее и стандартное отклонение `epsilon` на случайных наборах.
+- `graphs/llnl_stats.png` - среднее и стандартное отклонение `epsilon` на LLNL-логах (если есть файл `data/LLNL-UBGL-2006-2.swf`).
 
-## Run task 1 (single file + algorithm)
+## Задание 1: запуск на одном файле задач
 
-Input format (one task per line):
+Формат входного файла (по одной задаче в строке):
 
 ```text
 r_j t_j
 ```
 
-Example file: `data/tasks_example.txt`.
+где:
+- `r_j` - число требуемых элементарных машин;
+- `t_j` - время выполнения задачи.
 
-Run:
+Пример файла: `data/tasks_example.txt`.
+
+Запуск через Python:
 
 ```bash
 python3 main.py --mode single --input-file data/tasks_example.txt --n 1024 --algorithm NFDH
 ```
 
-or via Makefile:
+Запуск через Makefile:
 
 ```bash
 make single INPUT=data/tasks_example.txt N=1024 ALG=FFDH
 ```
 
-The program prints schedule `S`, objective `T(S)`, lower bound `T'`, relative error `epsilon`, and runtime in seconds.
+В выводе печатаются:
+- расписание `S`,
+- значение целевой функции `T(S)`,
+- нижняя граница `T'`,
+- относительное отклонение `epsilon`,
+- время работы алгоритма в секундах.
