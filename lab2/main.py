@@ -78,7 +78,7 @@ def experiment_random_stats(m_values: Sequence[int], n: int, runs: int = 10) -> 
         ffdh_mean,
         ffdh_std,
         filename="random_stats.png",
-        title="Random Tasks: Epsilon Mean and Std",
+        title="Случайные задачи: среднее и стандартное отклонение epsilon",
     )
 
 
@@ -124,7 +124,7 @@ def experiment_llnl_stats(m_values: Sequence[int], n: int, log_path: Path, runs:
             ffdh_mean,
             ffdh_std,
             filename="llnl_stats.png",
-            title="LLNL Logs: Epsilon Mean and Std",
+            title="Логи LLNL: среднее и стандартное отклонение epsilon",
         )
 
 

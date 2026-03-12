@@ -51,9 +51,3 @@ help:
 	@echo "  OAK:  make && sbatch task_oak.job  → results/ → make plot-all"
 	@echo "Переменные: NP=2 N_ITER=50 MPIRUN=mpirun"
 
-# Build with MPICH (if mpicc is not in PATH, set MPI_CC):
-# make MPI_CC=mpicc
-# Or load module and: make
-
-# Build with MVAPICH2 on cluster (example):
-# module load mvapich2/2.2; make

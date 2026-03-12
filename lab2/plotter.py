@@ -24,9 +24,9 @@ def plot_time_complexity(
     markers = ["o", "s", "^", "d", "x", "*"]
     for idx, (label, values) in enumerate(series.items()):
         plt.plot(m_values, values, marker=markers[idx % len(markers)], label=label)
-    plt.xlabel("m (number of tasks)")
-    plt.ylabel("Runtime, seconds")
-    plt.title("Time Complexity: NFDH vs FFDH for Different n")
+    plt.xlabel("m (число задач)")
+    plt.ylabel("Время выполнения, секунды")
+    plt.title("Сложность по времени: NFDH и FFDH при разных n")
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
@@ -43,14 +43,14 @@ def plot_accuracy(
     *,
     graphs_dir: str = "graphs",
     filename: str = "stats.png",
-    title: str = "Epsilon Statistics",
+    title: str = "Статистика epsilon",
 ) -> None:
     out_dir = _ensure_graphs_dir(graphs_dir)
 
     plt.figure(figsize=(9, 5))
     plt.errorbar(m_values, nfdh_mean, yerr=nfdh_std, marker="o", capsize=4, label="NFDH")
     plt.errorbar(m_values, ffdh_mean, yerr=ffdh_std, marker="s", capsize=4, label="FFDH")
-    plt.xlabel("m (number of tasks)")
+    plt.xlabel("m (число задач)")
     plt.ylabel("epsilon")
     plt.title(title)
     plt.grid(True, alpha=0.3)

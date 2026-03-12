@@ -19,13 +19,6 @@ echo "=== end test ==="
 NODE1=$(scontrol show hostnames "$SLURM_NODELIST" | head -1)
 NODE2=$(scontrol show hostnames "$SLURM_NODELIST" | tail -1)
 
-# Создаем файл hosts.txt с явным указанием слотов, чтобы OpenMPI не ругался
-echo "$NODE1 slots=8" > hosts.txt
-echo "$NODE2 slots=8" >> hosts.txt
-
-# Создаем файл hosts_single.txt только с первым узлом (для тестов памяти и QPI)
-echo "$NODE1 slots=8" > hosts_single.txt
-
 # Уровень сети (InfiniBand): раскидываем процессы по двум разным узлам
 echo "level,m_bytes,t_sec" > results/oak_network.csv
 mpiexec -np 1 --host "$NODE1" ./benchmark : -np 1 --host "$NODE2" ./benchmark | awk '{print "network," $0}' >> results/oak_network.csv
