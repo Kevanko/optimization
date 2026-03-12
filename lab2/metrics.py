@@ -8,17 +8,16 @@ Task = Tuple[int, int]  # (r_j, t_j)
 
 def get_lower_bound(tasks: Sequence[Task], n: int) -> float:
     """
-    Lower bound for strip scheduling:
-      T' = max(max_j t_j, (sum_j r_j * t_j) / n)
+    Lower bound from lab formulation:
+      T' = (sum_j r_j * t_j) / n
     """
     if not tasks:
         return 0.0
     if n <= 0:
         raise ValueError("n must be positive")
 
-    max_height = max(t for _, t in tasks)
     area_bound = sum(r * t for r, t in tasks) / n
-    return float(max(max_height, area_bound))
+    return float(area_bound)
 
 
 def get_epsilon(t_s: float, t_prime: float) -> float:
