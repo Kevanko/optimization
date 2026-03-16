@@ -87,7 +87,7 @@ def main():
     # ── 3.2: T(n), N=8192, μ=1, m=1, λ ∈ {1e-5..1e-9} ─────────────────────────
     print("3.2 T(n) varying λ ...")
     N3, mu3, m3 = 8192, 1.0, 1
-    n_range3 = range(N3 - 100, N3 + 1, 10)   # 8092, 8102, ..., 8192
+    n_range3 = range(N3 - 100, N3, 10)   # 8092, 8102, ..., 8182 (exclude N3)
     lams3 = [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
     cols = [(f"lam={lam}", compute_series(n_range3, compute_T, N=N3, lam=lam, mu=mu3, m=m3))
             for lam in lams3]
