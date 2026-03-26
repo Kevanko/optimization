@@ -4,9 +4,9 @@
 set terminal pngcairo size 900,600 enhanced font "Arial,11"
 set output "../plots/theta_m.png"
 
-set title "Mean time between failures (N = 65536, {/Symbol l} = 10^{-5} hours^{-1}, {/Symbol m} = 1 hours^{-1})"
-set xlabel "Number n of elementary machines in base subsystem"
-set ylabel "Mean time between failures (hours)"
+set title "Среднее время наработки до отказа (N = 65536, {/Symbol l} = 10^{-5} 1/ч, {/Symbol m} = 1 1/ч)"
+set xlabel "Число машин n в основной подсистеме"
+set ylabel "Среднее время до отказа (часы)"
 set logscale y
 set grid
 set key top right

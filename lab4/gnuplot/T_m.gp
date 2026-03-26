@@ -4,9 +4,9 @@
 set terminal pngcairo size 900,600 enhanced font "Arial,11"
 set output "../plots/T_m.png"
 
-set title "Mean time to recovery (N = 8192, {/Symbol l} = 10^{-5} hours^{-1}, {/Symbol m} = 1 hours^{-1})"
-set xlabel "Number n of elementary machines in base subsystem"
-set ylabel "Mean time to recovery (hours)"
+set title "Среднее время восстановления (N = 8192, {/Symbol l} = 10^{-5} 1/ч, {/Symbol m} = 1 1/ч)"
+set xlabel "Число машин n в основной подсистеме"
+set ylabel "Среднее время восстановления (часы)"
 set grid
 set key top right
 
