@@ -13,7 +13,8 @@ Input file format (one value per line):
 
 Constraints:
   c1 in {1, 2, 3}
-  c2, c3 in {4, 5, 6}
+  c2, c3 typically come from the task statement set {4, 5, 6}
+  the worked example in the PDF uses c2 = 2 and c3 = 3
   c1 < max(c2, c3)
 """
 
@@ -48,8 +49,13 @@ def validate(n, c1, c2, c3):
         sys.exit("n must be >= 1")
     if c1 not in {1.0, 2.0, 3.0}:
         print(f"Warning: c1={c1} is outside the recommended set {{1, 2, 3}}")
-    if c2 not in {4.0, 5.0, 6.0} or c3 not in {4.0, 5.0, 6.0}:
-        print(f"Warning: c2={c2}, c3={c3} should be in {{4, 5, 6}} for the actual lab")
+    text_values = {4.0, 5.0, 6.0}
+    example_values = {2.0, 3.0}
+    if c2 in example_values or c3 in example_values:
+        print("Note: the task text lists c2, c3 in {4, 5, 6}, "
+              "but the worked example in the PDF uses c2=2 and c3=3.")
+    elif c2 not in text_values or c3 not in text_values:
+        print(f"Warning: c2={c2}, c3={c3} are outside the values used in the task text/example")
     if c1 >= max(c2, c3):
         print(f"Warning: constraint c1 < max(c2, c3) violated (c1={c1}, max={max(c2,c3)})")
 
@@ -79,11 +85,13 @@ def main():
     strat_dp = result["strategy_dp"]
     alpha = result["alpha"]
     beta = result["beta"]
-    approx_value = (alpha + beta) / 2
+    approx_value = result["approx_game_value"]
+    convergence_gap = result["convergence_gap"]
 
     print(f"\nNumber of iterations l = {result['iterations']}")
-    print(f"Game value V = {result['game_value']:.3f}  "
-          f"(convergence gap β−α; approximate payoff ≈ {approx_value:.3f})")
+    print(f"Approximate game value V ≈ {approx_value:.3f}")
+    print(f"Convergence gap β−α = {convergence_gap:.3f}  "
+          f"(bounds: {alpha:.3f} <= V <= {beta:.3f})")
 
     print("\nOptimal mixed strategies (VC):")
     print("  " + "  ".join(f"{v:.2f}" for v in strat_vc))

@@ -13,7 +13,8 @@ Convergence criterion: beta - alpha < epsilon, where
 l1 = number of rows chosen by Player 1 (starts with one extra initial move)
 l2 = number of columns chosen by Player 2 (= total loop iterations)
 
-Printed "Цена игры V" = (beta - alpha) at convergence, i.e. the residual gap.
+The approximate game value is taken as (alpha + beta) / 2, while
+beta - alpha is the residual convergence gap of the iterative process.
 """
 
 import numpy as np
@@ -23,10 +24,11 @@ def brown_method(C: np.ndarray, epsilon: float) -> dict:
     """Run Brown's iterative method on payment matrix C.
 
     Returns a dict with keys:
-      iterations   — total loop iteration count (= l2 = col_counts.sum())
-      game_value   — residual gap (beta - alpha) at convergence
-      strategy_vc  — optimal mixed strategy for Player 1 (VC), shape (n+1,)
-      strategy_dp  — optimal mixed strategy for Player 2 (Dispatcher), shape (n+1,)
+      iterations            — total loop iteration count (= l2 = col_counts.sum())
+      approx_game_value     — midpoint (alpha + beta) / 2
+      convergence_gap       — residual gap (beta - alpha) at convergence
+      strategy_vc           — optimal mixed strategy for Player 1 (VC), shape (n+1,)
+      strategy_dp           — optimal mixed strategy for Player 2 (Dispatcher), shape (n+1,)
     """
     n = C.shape[0]
 
@@ -65,14 +67,16 @@ def brown_method(C: np.ndarray, epsilon: float) -> dict:
         if beta - alpha < epsilon:
             break
 
-    game_value = beta - alpha  # residual gap (printed as "Цена игры V")
+    convergence_gap = beta - alpha
+    approx_game_value = (alpha + beta) / 2
 
     strategy_vc = row_counts / row_counts.sum()
     strategy_dp = col_counts / col_counts.sum()
 
     return {
         "iterations": l2,
-        "game_value": game_value,
+        "approx_game_value": approx_game_value,
+        "convergence_gap": convergence_gap,
         "strategy_vc": strategy_vc,
         "strategy_dp": strategy_dp,
         "alpha": alpha,
