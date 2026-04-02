@@ -1,11 +1,11 @@
 PYTHON  = python3
 GNUPLOT = gnuplot
 
-SCRIPTS = gnuplot/theta_mu.gp gnuplot/theta_lam.gp gnuplot/theta_m.gp \
-          gnuplot/T_mu.gp gnuplot/T_lam.gp gnuplot/T_m.gp
+SCRIPTS = gnuplot/theta_mu.gp gnuplot/theta_lam.gp gnuplot/theta_m.gp gnuplot/theta_n_start.gp \
+          gnuplot/T_mu.gp gnuplot/T_lam.gp gnuplot/T_m.gp gnuplot/T_n_start.gp
 
-PLOTS   = plots/theta_mu.png plots/theta_lam.png plots/theta_m.png \
-          plots/T_mu.png plots/T_lam.png plots/T_m.png
+PLOTS   = plots/theta_mu.png plots/theta_lam.png plots/theta_m.png plots/theta_n_start.png \
+          plots/T_mu.png plots/T_lam.png plots/T_m.png plots/T_n_start.png
 
 .PHONY: all data plots plots-py clean
 

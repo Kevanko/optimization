@@ -19,6 +19,7 @@ MS = [1, 2, 3]
 N_START_VALUES = list(range(N - 9, N + 1))  # 65527..65536
 GRAPH_N_START = N - 9
 GRAPH_K_VALUES = list(range(GRAPH_N_START, N + 1))
+GRAPH_N_START_VALUES = N_START_VALUES
 
 
 def ensure_dirs() -> None:
@@ -49,17 +50,23 @@ def write_vectors_csv(path: str) -> None:
     print(f"  Written: {path}")
 
 
-def write_dat(path: str, k_values: list[int], columns: list[tuple[str, list[float]]], header: str = "") -> None:
-    """Write graph data with columns [k, series1, series2, ...]."""
+def write_dat(
+    path: str,
+    x_values: list[int],
+    columns: list[tuple[str, list[float]]],
+    header: str = "",
+    x_label: str = "k",
+) -> None:
+    """Write graph data with columns [x, series1, series2, ...]."""
     labels = "  ".join(label for label, _ in columns)
     with open(path, "w") as f:
         if header:
             f.write(f"# {header}\n")
-        f.write(f"# k  {labels}\n")
-        for idx, k in enumerate(k_values):
+        f.write(f"# {x_label}  {labels}\n")
+        for idx, x in enumerate(x_values):
             values = "  ".join(f"{series[idx]:.6e}" for _, series in columns)
-            f.write(f"{k}  {values}\n")
-    print(f"  Written: {path}  ({len(k_values)} rows, {len(columns)} series)")
+            f.write(f"{x}  {values}\n")
+    print(f"  Written: {path}  ({len(x_values)} rows, {len(columns)} series)")
 
 
 def component_series_theta(k_values: list[int], *, lam: float, mu: float, m: int) -> list[float]:
@@ -68,6 +75,14 @@ def component_series_theta(k_values: list[int], *, lam: float, mu: float, m: int
 
 def component_series_T(k_values: list[int], *, lam: float, mu: float, m: int) -> list[float]:
     return [compute_T_component(k, N, lam, mu, m) for k in k_values]
+
+
+def component_series_theta_n_start(n_start_values: list[int], *, lam: float, mu: float, m: int) -> list[float]:
+    return [compute_theta_component(n_start, N, lam, mu, m) for n_start in n_start_values]
+
+
+def component_series_T_n_start(n_start_values: list[int], *, lam: float, mu: float, m: int) -> list[float]:
+    return [compute_T_component(n_start, N, lam, mu, m) for n_start in n_start_values]
 
 
 def main() -> None:
@@ -144,7 +159,29 @@ def main() -> None:
         f"T_k, N={N}, lambda=1e-5, mu=1, n_start={GRAPH_N_START}",
     )
 
-    print("\nAll Lab 5 datasets written to data/")
+    theta_n_start_cols = [
+        ("lam=1e-5, mu=1, m=1", component_series_theta_n_start(GRAPH_N_START_VALUES, lam=1e-5, mu=1.0, m=1))
+    ]
+    write_dat(
+        "data/theta_n_start.dat",
+        GRAPH_N_START_VALUES,
+        theta_n_start_cols,
+        f"theta_n_start, N={N}, lambda=1e-5, mu=1, m=1",
+        x_label="n_start",
+    )
+
+    T_n_start_cols = [
+        ("lam=1e-5, mu=1, m=1", component_series_T_n_start(GRAPH_N_START_VALUES, lam=1e-5, mu=1.0, m=1))
+    ]
+    write_dat(
+        "data/T_n_start.dat",
+        GRAPH_N_START_VALUES,
+        T_n_start_cols,
+        f"T_n_start, N={N}, lambda=1e-5, mu=1, m=1",
+        x_label="n_start",
+    )
+
+    print("\nAll Lab 5 datasets (8 graphs) written to data/")
 
 
 if __name__ == "__main__":

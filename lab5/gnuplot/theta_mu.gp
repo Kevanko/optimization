@@ -1,7 +1,7 @@
 set terminal pngcairo size 900,600 enhanced font "Arial,11"
 set output "../plots/theta_mu.png"
 
-set title "Компоненты вектора {/Symbol q}_k (N = 65536, {/Symbol l} = 10^{-5} 1/ч, m = 1)"
+set title "Вектор среднего времени безотказной работы ВС: компоненты {/Symbol q}_k (N = 65536, {/Symbol l} = 10^{-5} 1/ч, m = 1)"
 set xlabel "Число работоспособных машин k"
 set ylabel "{/Symbol q}_k (часы)"
 set logscale y
